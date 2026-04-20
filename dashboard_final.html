@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analyse des flux d'immigration au Québec (2016–2023)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700&family=Inter:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#060A14;color:#e8edf5;min-height:100vh;}
+.header{background:#0D1526;border-bottom:1px solid rgba(56,138,221,0.2);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.header h1{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.02em;}
+.header p{font-size:10px;color:#5A7FA8;margin-top:3px;letter-spacing:0.1em;text-transform:uppercase;}
+.nav{display:flex;gap:4px;}
+.nav-btn{font-size:11px;padding:7px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#5A7FA8;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;}
+.nav-btn.active,.nav-btn:hover{background:#185FA5;color:#fff;border-color:#185FA5;}
+.filter-bar{padding:10px 28px;background:#0D1526;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.filter-label{font-size:10px;color:#5A7FA8;text-transform:uppercase;letter-spacing:0.1em;margin-right:6px;font-weight:500;}
+.yr-btn{font-size:10px;padding:4px 11px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#8AA4C0;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s;}
+.yr-btn.active{background:#185FA5;color:#fff;border-color:#185FA5;}
+.yr-btn:hover:not(.active){border-color:#378ADD;color:#fff;}
+.content{padding:20px 28px;}
+.page{display:none;}.page.active{display:block;}
+.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px;}
+.kpi{background:#0D1526;border:1px solid rgba(56,138,221,0.2);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;transition:border-color 0.2s;}
+.kpi:hover{border-color:rgba(56,138,221,0.5);}
+.kpi-accent{position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0;}
+.kpi-label{font-size:9px;color:#5A7FA8;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;font-weight:500;}
+.kpi-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:#fff;line-height:1;}
+.kpi-sub{font-size:10px;margin-top:5px;}
+.up{color:#1D9E75;}.down{color:#E24B4A;}.neu{color:#5A7FA8;}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px;}
+.chart-card{background:#0D1526;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px 18px;transition:border-color 0.2s;}
+.chart-card:hover{border-color:rgba(56,138,221,0.3);}
+.chart-card.full{grid-column:1/-1;}
+.cc-title{font-size:12px;font-weight:500;color:#C8D8E8;margin-bottom:2px;}
+.cc-sub{font-size:9px;color:#5A7FA8;margin-bottom:12px;}
+.bar-h{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.bar-h-label{font-size:10px;color:#8AA4C0;width:72px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-h-track{flex:1;height:14px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}
+.bar-h-fill{height:100%;border-radius:3px;transition:width 0.6s ease;}
+.bar-h-val{font-size:9px;color:#5A7FA8;width:40px;flex-shrink:0;text-align:right;}
+.insight-box{background:#091525;border:1px solid rgba(56,138,221,0.2);border-radius:8px;padding:16px 18px;margin-top:13px;}
+.insight-title{font-size:9px;color:#378ADD;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;font-weight:500;}
+.insight-item{font-size:11px;color:#8AA4C0;line-height:1.7;padding:4px 0 4px 12px;margin-bottom:4px;border-left:2px solid rgba(56,138,221,0.3);}
+.legend-row{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:#8AA4C0;}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.page-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#C8D8E8;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.page-title::before{content:'';width:3px;height:14px;background:#185FA5;border-radius:2px;display:inline-block;}
+.footer{padding:14px 28px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.footer span{font-size:10px;color:#5A7FA8;}
+.badge{font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(24,95,165,0.15);color:#378ADD;border:1px solid rgba(56,138,221,0.2);margin-left:6px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Analyse des flux d'immigration au Québec</h1>
+    <p>Données réelles · SQL Server · immigration_qc · 2016 – 2023 · Projet de synthèse universitaire</p>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showPage('p1',this)">Vue générale</button>
+    <button class="nav-btn" onclick="showPage('p2',this)">Profils &amp; origines</button>
+    <button class="nav-btn" onclick="showPage('p3',this)">Analyse comparative</button>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <span class="filter-label">Filtrer par année</span>
+  <button class="yr-btn active" onclick="setYear('all',this)">Toutes</button>
+  <button class="yr-btn" onclick="setYear(2018,this)">2018</button>
+  <button class="yr-btn" onclick="setYear(2019,this)">2019</button>
+  <button class="yr-btn" onclick="setYear(2020,this)">2020</button>
+  <button class="yr-btn" onclick="setYear(2021,this)">2021</button>
+  <button class="yr-btn" onclick="setYear(2022,this)">2022</button>
+</div>
+
+<div class="content">
+
+  <!-- PAGE 1 -->
+  <div id="p1" class="page active">
+    <div class="page-title">Vue générale</div>
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-accent" style="background:#185FA5;"></div>
+        <div class="kpi-label">Total étudiants internationaux</div>
+        <div class="kpi-val" id="kv-et">2,23M</div>
+        <div class="kpi-sub up" id="ks-et">↑ 2018 – 2022</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-accent" style="background:#EF9F27;"></div>
+        <div class="kpi-label">Admissions permanentes</div>
+        <div class="kpi-val" id="kv-pr">793K</div>
+        <div class="kpi-sub neu" id="ks-pr">Données 2020 – 2021</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-accent" style="background:#1D9E75;"></div>
+        <div class="kpi-label">CSQ délivrés</div>
+        <div class="kpi-val" id="kv-csq">2,08M</div>
+        <div class="kpi-sub down" id="ks-csq">↓ tendance 2016–2019</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-accent" style="background:#7F77DD;"></div>
+        <div class="kpi-label">Taux CSQ → Résidents permanents</div>
+        <div class="kpi-val">38,2%</div>
+        <div class="kpi-sub neu">Indicateur analytique original</div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="cc-title">Évolution des étudiants internationaux</div>
+        <div class="cc-sub" id="sub-et">2018 – 2022 · données réelles SQL</div>
+        <div style="position:relative;height:190px;"><canvas id="c-et"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-title">Évolution de l'immigration permanente</div>
+        <div class="cc-sub" id="sub-pr">2020 : 258 768 · 2021 : 533 734</div>
+        <div style="position:relative;height:190px;"><canvas id="c-pr"></canvas></div>
+      </div>
+      <div class="chart-card full">
+        <div class="cc-title">Évolution des CSQ (2016 – 2023)</div>
+        <div class="cc-sub">Données réelles · ligne de tendance en rouge pointillé</div>
+        <div style="position:relative;height:175px;"><canvas id="c-csq"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2 -->
+  <div id="p2" class="page">
+    <div class="page-title">Profils &amp; origines</div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="cc-title">Top 7 pays d'origine — Étudiants</div>
+        <div class="cc-sub" id="sub-bars-et">Toutes les années · données réelles SQL</div>
+        <div id="bars-et"></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-title">Top 7 pays d'origine — CSQ</div>
+        <div class="cc-sub" id="sub-bars-csq">Toutes les années · données réelles SQL</div>
+        <div id="bars-csq"></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-title">Étudiants par niveau d'études</div>
+        <div class="cc-sub" id="sub-niv">Toutes les années · données réelles SQL</div>
+        <div class="legend-row" id="legend-niv" style="margin-bottom:8px;">
+          <span class="legend-item"><span class="legend-dot" style="background:#185FA5;"></span>Baccalauréat</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#1D9E75;"></span>Cégep</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#378ADD;"></span>Maîtrise</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#5DCAA5;"></span>Secondaire</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#7F77DD;"></span>Doctorat</span>
+        </div>
+        <div style="position:relative;height:185px;"><canvas id="c-niv"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-title">Catégories d'immigration — CSQ</div>
+        <div class="cc-sub" id="sub-cat">Toutes les années · données réelles SQL</div>
+        <div style="position:relative;height:215px;"><canvas id="c-cat"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 3 -->
+  <div id="p3" class="page">
+    <div class="page-title">Analyse comparative</div>
+    <div class="chart-card full" style="margin-bottom:13px;">
+      <div class="cc-title">Évolution comparative des 3 flux d'immigration</div>
+      <div class="cc-sub">Données réelles · même axe temporel 2016 – 2023</div>
+      <div class="legend-row">
+        <span class="legend-item"><span class="legend-dot" style="background:#185FA5;"></span>Étudiants</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#EF9F27;"></span>Permanents</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#1D9E75;"></span>CSQ</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#E24B4A;border-radius:0;width:16px;height:2px;margin-top:4px;"></span>COVID-19 (2020)</span>
+      </div>
+      <div style="position:relative;height:290px;"><canvas id="c-comp"></canvas></div>
+    </div>
+    <div class="insight-box">
+      <div class="insight-title">Constats analytiques — données réelles</div>
+      <div class="insight-item" style="border-left-color:rgba(226,75,74,0.6);">2020 : COVID-19 provoque une chute simultanée — étudiants −25% (472K→355K), CSQ au creux historique (217K)</div>
+      <div class="insight-item" style="border-left-color:rgba(24,95,165,0.5);">Étudiants : forte reprise post-COVID, niveau record en 2021 (521 760) et maintenu en 2022 (520 430)</div>
+      <div class="insight-item" style="border-left-color:rgba(29,158,117,0.5);">CSQ : tendance baissière 2016 (374K) → 2019 (217K), reprise progressive — retour à 348K en 2023</div>
+      <div class="insight-item" style="border-left-color:rgba(239,159,39,0.5);">Permanents : explosion post-COVID +106% entre 2020 (258 768) et 2021 (533 734)</div>
+      <div class="insight-item" style="border-left-color:rgba(127,119,221,0.5);">Ces tendances confirment que l'immigration au Québec est fortement influencée par les facteurs économiques et les événements mondiaux</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>Source : Données ouvertes Québec · Base de données : SQL Server immigration_qc <span class="badge">Python · SQL · Power BI</span></span>
+  <span>Projet de synthèse universitaire · Data Analytics · 2024</span>
+</div>
+
+<script>
+const C={blue:'#185FA5',blueL:'#378ADD',orange:'#EF9F27',green:'#1D9E75',greenL:'#5DCAA5',purple:'#7F77DD',red:'#E24B4A',grid:'rgba(255,255,255,0.06)',tick:'#5A7FA8'};
+
+// ── REAL DATA ──────────────────────────────────────────────
+const etData={2018:362495,2019:472355,2020:355365,2021:521760,2022:520430};
+const prData={2020:258768,2021:533734};
+const csqData={2016:374640,2017:297457,2018:259493,2019:217197,2020:223360,2021:298522,2022:256002,2023:348638};
+
+// Top pays étudiants par année (real SQL data)
+const paysEtByYear={
+  'all':[{n:'France',v:50635},{n:'Inde',v:48665},{n:'Chine',v:23955},{n:'Algérie',v:12705},{n:'Maroc',v:12125},{n:'Iran',v:10365},{n:'Tunisie',v:7385}],
+  2018:[{n:'France',v:9920},{n:'Chine',v:5895},{n:'Inde',v:5615},{n:'Maroc',v:1645},{n:'Iran',v:1530},{n:'Algérie',v:1345},{n:'Tunisie',v:1130}],
+  2019:[{n:'Inde',v:12700},{n:'France',v:10475},{n:'Chine',v:5960},{n:'Algérie',v:2500},{n:'Maroc',v:2420},{n:'Iran',v:2060},{n:'Tunisie',v:1325}],
+  2020:[{n:'Inde',v:12190},{n:'France',v:5870},{n:'Chine',v:4165},{n:'Maroc',v:1900},{n:'Algérie',v:1885},{n:'Iran',v:1520},{n:'Tunisie',v:1180}],
+  2021:[{n:'France',v:13670},{n:'Inde',v:10085},{n:'Chine',v:4430},{n:'Maroc',v:2995},{n:'Iran',v:2710},{n:'Algérie',v:2660},{n:'Colombie',v:1635}],
+  2022:[{n:'France',v:10700},{n:'Inde',v:8075},{n:'Algérie',v:4315},{n:'Chine',v:3505},{n:'Maroc',v:3165},{n:'Iran',v:2545},{n:'Colombie',v:2305}]
+};
+
+// Top pays CSQ par année (real SQL data from document)
+const paysCsqByYear={
+  'all':[{n:'France',v:53032},{n:'Chine',v:34225},{n:'Cameroun',v:30040},{n:'Algérie',v:24534},{n:'Haïti',v:22457},{n:'Inde',v:20187},{n:'Maroc',v:19934}],
+  2016:[{n:'Chine',v:9195},{n:'Inde',v:6825},{n:'Syrie',v:6124},{n:'France',v:6060},{n:'Philippines',v:3832},{n:'Algérie',v:3685},{n:'Cameroun',v:2808}],
+  2017:[{n:'Chine',v:6011},{n:'France',v:5495},{n:'Algérie',v:4238},{n:'Cameroun',v:3712},{n:'Syrie',v:3531},{n:"Côte d'Ivoire",v:3281},{n:'Inde',v:2688}],
+  2018:[{n:'France',v:5831},{n:'Chine',v:4958},{n:'Syrie',v:3601},{n:'Algérie',v:3127},{n:'Maroc',v:2996},{n:'Tunisie',v:2139},{n:'Cameroun',v:1842}],
+  2019:[{n:'France',v:7427},{n:'Chine',v:3205},{n:'Haïti',v:2507},{n:'Syrie',v:2108},{n:'Algérie',v:1702},{n:'Maroc',v:1588},{n:'Cameroun',v:1385}],
+  2020:[{n:'France',v:6923},{n:'Chine',v:3841},{n:'Algérie',v:2293},{n:'Haïti',v:2187},{n:'Maroc',v:2036},{n:'Inde',v:1608},{n:'Tunisie',v:1513}],
+  2021:[{n:'France',v:10920},{n:'Haïti',v:4649},{n:'Chine',v:3204},{n:'Tunisie',v:2661},{n:'Maroc',v:2587},{n:'Algérie',v:2582},{n:'Cameroun',v:2431}],
+  2022:[{n:'Cameroun',v:4713},{n:'France',v:3982},{n:'Haïti',v:3690},{n:'Algérie',v:2770},{n:'Inde',v:2433},{n:'Maroc',v:2214},{n:'Tunisie',v:2114}]
+};
+
+// Catégories CSQ par année (real SQL data)
+const catCsqByYear={
+  'all':{economique:245210,familial:113499,refugies:86440},
+  2016:{economique:47294,familial:14797,refugies:12168},
+  2017:{economique:36832,familial:12935,refugies:9032},
+  2018:{economique:28852,familial:12915,refugies:9740},
+  2019:{economique:20128,familial:11351,refugies:11225},
+  2020:{economique:23144,familial:13849,refugies:7072},
+  2021:{economique:31991,familial:13820,refugies:9176},
+  2022:{economique:20006,familial:16586,refugies:13742}
+};
+
+// Niveaux d'études (real SQL data)
+const niveauData={
+  2018:{baccalaureat:11550,cegep:9600,maitrise:8775,secondaire:6945,doctorat:3400,autres_univ:1515,primaire:1345,autres:1115},
+  2019:{baccalaureat:13110,cegep:16860,maitrise:9795,secondaire:8260,doctorat:3860,autres_univ:1500,primaire:2315,autres:1520},
+  2020:{baccalaureat:7110,cegep:15720,maitrise:6205,secondaire:6680,doctorat:3390,autres_univ:1000,primaire:1520,autres:1075},
+  2021:{baccalaureat:16180,cegep:14805,maitrise:13205,secondaire:8095,doctorat:5180,autres_univ:1940,primaire:2735,autres:1000},
+  2022:{baccalaureat:15150,cegep:15095,maitrise:13000,secondaire:8335,doctorat:4875,autres_univ:2025,primaire:3355,autres:1015}
+};
+
+// ── HELPERS ────────────────────────────────────────────────
+function fmt(v){if(v>=1000000)return(v/1000000).toFixed(2)+'M';if(v>=1000)return(v/1000).toFixed(1)+'K';return v;}
+function fmtTick(v){return v>=1000?(v/1000).toFixed(0)+'K':v;}
+const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:C.grid},ticks:{color:C.tick,font:{size:10}}},y:{grid:{color:C.grid},ticks:{color:C.tick,font:{size:10},callback:fmtTick}}}};
+
+let chartEt,chartPr,chartNiv,chartCat;
+
+// ── PAGE 1 CHARTS ──────────────────────────────────────────
+function buildEtChart(yr){
+  if(chartEt)chartEt.destroy();
+  let labels,vals;
+  if(yr==='all'){labels=Object.keys(etData);vals=Object.values(etData);}
+  else{labels=[String(yr)];vals=[etData[yr]||0];}
+  chartEt=new Chart(document.getElementById('c-et'),{type:'line',data:{labels,datasets:[{data:vals,borderColor:C.blue,backgroundColor:'rgba(24,95,165,0.2)',fill:true,tension:0.4,pointBackgroundColor:C.blue,pointRadius:5,pointHoverRadius:7,borderWidth:2.5}]},options:baseOpts});
+  document.getElementById('kv-et').textContent=yr==='all'?'2,23M':fmt(etData[yr]||0);
+  document.getElementById('ks-et').textContent=yr==='all'?'↑ 2018 – 2022':'Année '+yr;
+  document.getElementById('sub-et').textContent=yr==='all'?'2018 – 2022 · données réelles SQL':'Année '+yr+' · données réelles SQL';
+}
+
+function buildPrChart(yr){
+  if(chartPr)chartPr.destroy();
+  let labels,vals;
+  if(yr==='all'){labels=['2020','2021'];vals=[258768,533734];}
+  else if(yr===2020||yr===2021){labels=[String(yr)];vals=[prData[yr]];}
+  else{labels=['Pas de données'];vals=[0];}
+  chartPr=new Chart(document.getElementById('c-pr'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:yr==='all'?[C.orange+'99',C.orange]:[C.orange],borderRadius:6,borderSkipped:false}]},options:baseOpts});
+  document.getElementById('kv-pr').textContent=yr==='all'?'793K':(prData[yr]?fmt(prData[yr]):'N/A');
+  document.getElementById('ks-pr').textContent=yr==='all'?'Données 2020 – 2021':(prData[yr]?'Année '+yr:'Pas de données');
+  document.getElementById('sub-pr').textContent=yr==='all'?'2020 : 258 768 · 2021 : 533 734':(prData[yr]?'Année '+yr+' · données réelles':'Pas de données permanents pour '+yr);
+}
+
+// CSQ chart (static - all years)
+const csqLabels=Object.keys(csqData);
+const csqVals=Object.values(csqData);
+const n=csqVals.length;
+const sumX=csqVals.reduce((_,__,i)=>_+i,0),sumY=csqVals.reduce((a,b)=>a+b,0),sumXY=csqVals.reduce((a,b,i)=>a+i*b,0),sumX2=csqVals.reduce((_,__,i)=>_+i*i,0);
+const slope=(n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX),intercept=(sumY-slope*sumX)/n;
+const trendVals=csqVals.map((_,i)=>Math.round(intercept+slope*i));
+new Chart(document.getElementById('c-csq'),{type:'line',data:{labels:csqLabels,datasets:[{data:csqVals,borderColor:C.green,backgroundColor:'rgba(29,158,117,0.12)',fill:true,tension:0.4,pointBackgroundColor:C.green,pointRadius:5,borderWidth:2.5},{data:trendVals,borderColor:C.red,borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false}]},options:baseOpts});
+
+// ── PAGE 2 CHARTS ──────────────────────────────────────────
+function buildBars(id,data,color){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML='';
+  const max=data[0].v;
+  data.forEach(d=>{
+    const pct=Math.round(d.v/max*100);
+    el.innerHTML+=`<div class="bar-h"><span class="bar-h-label">${d.n}</span><div class="bar-h-track"><div class="bar-h-fill" style="width:${pct}%;background:${color};"></div></div><span class="bar-h-val">${d.v>=1000?(d.v/1000).toFixed(1)+'K':d.v}</span></div>`;
+  });
+}
+
+function buildNivChart(yr){
+  if(chartNiv)chartNiv.destroy();
+  const niveaux=['baccalaureat','cegep','maitrise','secondaire','doctorat','autres_univ','primaire','autres'];
+  const labels=['Baccalauréat','Cégep','Maîtrise','Secondaire','Doctorat','Autres univ.','Primaire','Autres'];
+  const colors=[C.blue,C.green,C.blueL,C.greenL,C.purple,C.orange,C.red,'#3a4a5a'];
+
+  if(yr==='all'){
+    const annees=[2018,2019,2020,2021,2022];
+    chartNiv=new Chart(document.getElementById('c-niv'),{type:'bar',data:{labels:annees.map(String),datasets:niveaux.map((nv,i)=>({label:labels[i],data:annees.map(a=>niveauData[a][nv]||0),backgroundColor:colors[i],borderRadius:2}))},options:{...baseOpts,scales:{x:{stacked:true,grid:{color:C.grid},ticks:{color:C.tick,font:{size:10}}},y:{stacked:true,grid:{color:C.grid},ticks:{color:C.tick,font:{size:10},callback:fmtTick}}}}});
+    document.getElementById('legend-niv').style.display='flex';
+  } else {
+    const d=niveauData[yr];
+    if(!d){
+      chartNiv=new Chart(document.getElementById('c-niv'),{type:'bar',data:{labels:['Pas de données'],datasets:[{data:[0],backgroundColor:C.blue,borderRadius:4}]},options:baseOpts});
+    } else {
+      chartNiv=new Chart(document.getElementById('c-niv'),{type:'bar',data:{labels,datasets:[{data:niveaux.map(nv=>d[nv]||0),backgroundColor:colors,borderRadius:4,borderSkipped:false}]},options:{...baseOpts,indexAxis:'y',scales:{x:{grid:{color:C.grid},ticks:{color:C.tick,font:{size:9},callback:fmtTick}},y:{grid:{color:'transparent'},ticks:{color:C.tick,font:{size:9}}}}}});
+      document.getElementById('legend-niv').style.display='none';
+    }
+  }
+  document.getElementById('sub-niv').textContent=yr==='all'?'Toutes les années · données réelles SQL':'Année '+yr+' · données réelles SQL';
+}
+
+function buildCatChart(yr){
+  if(chartCat)chartCat.destroy();
+  const key=catCsqByYear[yr]?yr:'all';
+  const d=catCsqByYear[key];
+  chartCat=new Chart(document.getElementById('c-cat'),{type:'bar',data:{labels:['Économique','Regroupement familial','Réfugiés'],datasets:[{data:[d.economique,d.familial,d.refugies],backgroundColor:[C.orange,C.blueL,C.greenL],borderRadius:5,borderSkipped:false}]},options:{...baseOpts,indexAxis:'y',scales:{x:{grid:{color:C.grid},ticks:{color:C.tick,font:{size:10},callback:fmtTick}},y:{grid:{color:'transparent'},ticks:{color:C.tick,font:{size:10}}}}}});
+  document.getElementById('sub-cat').textContent=(yr==='all'||!catCsqByYear[yr])?'Toutes les années · données réelles SQL':'Année '+yr+' · données réelles SQL';
+}
+
+// ── PAGE 3 CHART ───────────────────────────────────────────
+const allYears=['2016','2017','2018','2019','2020','2021','2022','2023'];
+const etComp=allYears.map(y=>etData[parseInt(y)]??null);
+const prComp=allYears.map(y=>prData[parseInt(y)]??null);
+const csqComp=allYears.map(y=>csqData[parseInt(y)]??null);
+const covidPlugin={id:'covidLine',afterDraw(chart){const{ctx,chartArea,scales}=chart;if(!scales.x)return;const x=scales.x.getPixelForValue('2020');ctx.save();ctx.beginPath();ctx.setLineDash([5,4]);ctx.strokeStyle=C.red;ctx.lineWidth=1.5;ctx.moveTo(x,chartArea.top);ctx.lineTo(x,chartArea.bottom);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=C.red;ctx.font='500 10px Inter';ctx.fillText('COVID-19',x+5,chartArea.top+16);ctx.restore();}};
+new Chart(document.getElementById('c-comp'),{type:'line',data:{labels:allYears,datasets:[{label:'Étudiants',data:etComp,borderColor:C.blue,tension:0.4,pointRadius:5,borderWidth:2.5,pointBackgroundColor:C.blue,fill:false,spanGaps:false},{label:'Permanents',data:prComp,borderColor:C.orange,tension:0.4,pointRadius:6,borderWidth:2.5,pointBackgroundColor:C.orange,fill:false,spanGaps:false},{label:'CSQ',data:csqComp,borderColor:C.green,tension:0.4,pointRadius:5,borderWidth:2.5,pointBackgroundColor:C.green,fill:false,spanGaps:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+' : '+(ctx.raw?fmt(ctx.raw):'N/A')}}},scales:{x:{grid:{color:C.grid},ticks:{color:C.tick,font:{size:10}}},y:{grid:{color:C.grid},ticks:{color:C.tick,font:{size:10},callback:fmtTick},min:0,max:600000}}},plugins:[covidPlugin]});
+
+// ── INIT ───────────────────────────────────────────────────
+buildEtChart('all');
+buildPrChart('all');
+buildBars('bars-et',paysEtByYear['all'],C.blue);
+buildBars('bars-csq',paysCsqByYear['all'],C.green);
+buildNivChart('all');
+buildCatChart('all');
+
+// ── NAVIGATION ─────────────────────────────────────────────
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setYear(yr,btn){
+  document.querySelectorAll('.yr-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  // Page 1
+  buildEtChart(yr);
+  buildPrChart(yr);
+  document.getElementById('kv-csq').textContent=yr==='all'?'2,08M':fmt(csqData[yr]||0);
+  document.getElementById('ks-csq').textContent=yr==='all'?'↓ tendance 2016–2019':'Année '+yr;
+  // Page 2
+  const etKey=paysEtByYear[yr]?yr:'all';
+  const csqKey=paysCsqByYear[yr]?yr:'all';
+  buildBars('bars-et',paysEtByYear[etKey],C.blue);
+  buildBars('bars-csq',paysCsqByYear[csqKey],C.green);
+  document.getElementById('sub-bars-et').textContent=paysEtByYear[yr]?'Année '+yr+' · données réelles SQL':'Toutes les années · données réelles SQL';
+  document.getElementById('sub-bars-csq').textContent=paysCsqByYear[yr]?'Année '+yr+' · données réelles SQL':'Toutes les années · données réelles SQL';
+  buildNivChart(yr);
+  buildCatChart(yr);
+}
+</script>
+</body>
+</html>
